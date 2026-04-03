@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Search Books - LMS</title>
+  <link rel="stylesheet" href="../css/style.css"/>
+</head>
+<body>
+<div class="app-wrapper">
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main-content">
+    <div class="topbar">
+      <h1>Search Books</h1>
+      <div class="topbar-user">
+        <span class="user-icon">👤</span>
+        <span id="username-display"></span>
+      </div>
+    </div>
+
+    <div class="search-bar-wrap">
+      <span>🔍</span>
+      <input type="text" id="search-input" placeholder="Search Books" oninput="filterBooks()"/>
+    </div>
+
+    <div class="search-results" id="books-grid"></div>
+  </main>
+</div>
+<div id="toast" class="toast"></div>
+<script src="../js/app.js"></script>
+<script src="../js/sidebar.js"></script>
+<script>
+  requireAuth();
+  renderSidebar('search.html');
+  const user = LMS.getUser();
+  document.getElementById('username-display').textContent = user.fullname;
+
+  let cart = LMS.getCart();
+
+  function renderBooks(books) {
+    const grid = document.getElementById('books-grid');
+    if (books.length === 0) {
+      grid.innerHTML = '<p style="color:#94a3b8;font-size:14px;">No books found.</p>';
+      return;
+    }
+    grid.innerHTML = books.map(b => {
+      const inCart = cart.includes(b.id);
+      return `
+        <div class="search-book-card">
+          <img src="${b.img}" alt="${b.title}" onerror="this.src='https://via.placeholder.com/90x115?text=Book'"/>
+          <div class="title">${b.title}</div>
+          <div class="author">${b.author}</div>
+          <button class="btn-borrow ${inCart ? 'added' : ''}" onclick="toggleCart('${b.id}', this)" ${b.available === 0 ? 'disabled style="background:#e2e8f0;color:#94a3b8;cursor:not-allowed"' : ''}>
+            ${b.available === 0 ? 'Unavailable' : inCart ? 'Added ✓' : 'Borrow'}
+          </button>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function toggleCart(bookId, btn) {
+    const idx = cart.indexOf(bookId);
+    if (idx === -1) {
+      cart.push(bookId);
+      btn.textContent = 'Added ✓';
+      btn.classList.add('added');
+      showToast('Added to cart!', 'success');
+    } else {
+      cart.splice(idx, 1);
+      btn.textContent = 'Borrow';
+      btn.classList.remove('added');
+      showToast('Removed from cart.');
+    }
+    LMS.setCart(cart);
+  }
+
+  function filterBooks() {
+    const q = document.getElementById('search-input').value.toLowerCase();
+    const filtered = LMS.books.filter(b =>
+      b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q)
+    );
+    renderBooks(filtered);
+  }
+
+  renderBooks(LMS.books);
+</script>
+</body>
+</html>

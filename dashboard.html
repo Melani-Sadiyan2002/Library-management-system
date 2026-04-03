@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard - LMS</title>
+  <link rel="stylesheet" href="../css/style.css"/>
+</head>
+<body>
+<div class="app-wrapper">
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main-content">
+    <div class="topbar" id="topbar-wrap">
+      <div>
+        <h1 id="welcome-title">Welcome Back!</h1>
+        <p style="color:#64748b;font-size:14px;">Here's your library overview for today</p>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon blue">📘</div>
+        <h2 id="stat-borrowed">0</h2>
+        <p>Currently borrowed</p>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon yellow">🕐</div>
+        <h2>0</h2>
+        <p>Due this week</p>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon red">📈</div>
+        <h2>0</h2>
+        <p>Overdue Books</p>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green">📗</div>
+        <h2 id="stat-available">0</h2>
+        <p>Available Books</p>
+      </div>
+    </div>
+
+    <!-- Borrowed Books -->
+    <div class="section-card">
+      <h3>My Borrowed Books</h3>
+      <div class="books-grid" id="borrowed-books">
+        <p style="color:#94a3b8;font-size:14px;">No borrowed books yet.</p>
+      </div>
+    </div>
+  </main>
+</div>
+<div id="toast" class="toast"></div>
+<script src="../js/app.js"></script>
+<script src="../js/sidebar.js"></script>
+<script>
+  requireAuth();
+  renderSidebar('dashboard.html');
+
+  const user = LMS.getUser();
+  document.getElementById('welcome-title').textContent = `Welcome Back, ${user.fullname}!`;
+
+  const borrowed = LMS.getBorrowed();
+  const borrowedBooks = LMS.books.filter(b => borrowed.includes(b.id));
+
+  document.getElementById('stat-borrowed').textContent = borrowedBooks.length;
+  document.getElementById('stat-available').textContent = LMS.books.filter(b => b.available > 0).length;
+
+  const grid = document.getElementById('borrowed-books');
+  if (borrowedBooks.length > 0) {
+    grid.innerHTML = borrowedBooks.map(b => `
+      <div class="book-card">
+        <img src="${b.img}" alt="${b.title}" onerror="this.src='https://via.placeholder.com/80x100?text=Book'"/>
+        <div class="book-title">${b.title}</div>
+        <div class="book-author">${b.author}</div>
+      </div>
+    `).join('');
+  }
+</script>
+</body>
+</html>

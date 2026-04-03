@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Bar Code - LMS</title>
+  <link rel="stylesheet" href="../css/style.css"/>
+</head>
+<body>
+<div class="app-wrapper">
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main-content">
+    <div class="topbar">
+      <h1>My Bar Code</h1>
+      <div class="topbar-user">
+        <span class="user-icon">👤</span>
+        <span id="username-display"></span>
+      </div>
+    </div>
+
+    <div class="barcode-container">
+      <div class="barcode-box">
+        <div id="barcode-svg"></div>
+        <h3>Scan Barcode</h3>
+        <p>Place the Barcode under the scanner to read</p>
+      </div>
+
+      <div class="barcode-actions">
+        <button class="btn-confirm" onclick="confirmBorrow()">
+          🔲 Confirm Borrow
+        </button>
+        <button class="btn-clear" onclick="clearCart()">
+          🗑 Clear
+        </button>
+      </div>
+
+      <div class="info-note">
+        ℹ Scan the Book Barcode. The system will automatically process the book borrowing.
+      </div>
+
+      <div id="cart-preview" style="margin-top:20px;"></div>
+    </div>
+  </main>
+</div>
+<div id="toast" class="toast"></div>
+<script src="../js/app.js"></script>
+<script src="../js/sidebar.js"></script>
+<script>
+  requireAuth();
+  renderSidebar('barcode.html');
+  const user = LMS.getUser();
+  document.getElementById('username-display').textContent = user.fullname;
+
+  // Generate barcode SVG for the user
+  document.getElementById('barcode-svg').innerHTML = generateBarcodeSVG(user.username + user.nic);
+
+  // Show cart items in preview
+  function showCartPreview() {
+    const cart = LMS.getCart();
+    const books = LMS.books.filter(b => cart.includes(b.id));
+    const div = document.getElementById('cart-preview');
+    if (books.length === 0) {
+      div.innerHTML = '<p style="color:#94a3b8;font-size:13px;text-align:center;">No books in cart. Go to Search Books to add books.</p>';
+    } else {
+      div.innerHTML = `
+        <p style="font-size:13px;font-weight:600;margin-bottom:10px;color:#64748b;">Books in your cart (${books.length}):</p>
+        ${books.map(b => `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:13px;">
+          <img src="${b.img}" style="width:32px;height:42px;object-fit:cover;border-radius:4px;" onerror="this.src='https://via.placeholder.com/32x42?text=B'"/>
+          <div><strong>${b.title}</strong><br/><span style="color:#94a3b8">${b.author}</span></div>
+        </div>`).join('')}
+      `;
+    }
+  }
+
+  function confirmBorrow() {
+    const cart = LMS.getCart();
+    if (cart.length === 0) {
+      showToast('Your cart is empty!', 'error'); return;
+    }
+    cart.forEach(id => LMS.addBorrowed(id));
+    LMS.setCart([]);
+    showToast('Books borrowed successfully! 🎉', 'success');
+    setTimeout(() => { window.location.href = 'dashboard.html'; }, 1500);
+  }
+
+  function clearCart() {
+    LMS.setCart([]);
+    showToast('Cart cleared.');
+    showCartPreview();
+  }
+
+  showCartPreview();
+</script>
+</body>
+</html>

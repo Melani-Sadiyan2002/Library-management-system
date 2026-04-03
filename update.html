@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Update - LMS</title>
+  <link rel="stylesheet" href="../css/style.css"/>
+</head>
+<body>
+<div class="app-wrapper">
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main-content">
+    <div class="topbar">
+      <h1>Update</h1>
+      <div class="topbar-user">
+        <span class="user-icon">👤</span>
+        <span id="username-display"></span>
+      </div>
+    </div>
+
+    <div class="cart-card">
+      <div class="cart-header">
+        <h3>Your Cart</h3>
+        <button class="btn-clear-small" onclick="clearAll()">Clear</button>
+      </div>
+
+      <div id="cart-items"></div>
+
+      <div class="cart-footer">
+        <div class="cart-info-note">
+          ℹ Review and confirm borrowing for the books in your cart.
+        </div>
+        <button class="btn-confirm" onclick="confirmBorrow()" style="white-space:nowrap;">
+          🔲 Confirm Borrow
+        </button>
+      </div>
+    </div>
+  </main>
+</div>
+<div id="toast" class="toast"></div>
+<script src="../js/app.js"></script>
+<script src="../js/sidebar.js"></script>
+<script>
+  requireAuth();
+  renderSidebar('update.html');
+  const user = LMS.getUser();
+  document.getElementById('username-display').textContent = user.fullname;
+
+  function renderCart() {
+    const cart = LMS.getCart();
+    const books = LMS.books.filter(b => cart.includes(b.id));
+    const container = document.getElementById('cart-items');
+
+    if (books.length === 0) {
+      container.innerHTML = '<p style="color:#94a3b8;font-size:14px;padding:20px 0;text-align:center;">Your cart is empty. <a href="search.html" style="color:#2563eb;">Browse books</a></p>';
+      return;
+    }
+
+    container.innerHTML = books.map(b => `
+      <div class="cart-item">
+        <img src="${b.img}" alt="${b.title}" onerror="this.src='https://via.placeholder.com/50x65?text=Book'"/>
+        <div class="cart-item-info">
+          <div class="title">${b.title}</div>
+          <div class="author">${b.author}</div>
+        </div>
+        <span class="cart-item-id">${b.id}</span>
+        <button class="btn-delete" onclick="removeItem('${b.id}')">🗑</button>
+      </div>
+    `).join('');
+  }
+
+  function removeItem(bookId) {
+    const cart = LMS.getCart().filter(id => id !== bookId);
+    LMS.setCart(cart);
+    showToast('Book removed from cart.');
+    renderCart();
+  }
+
+  function clearAll() {
+    LMS.setCart([]);
+    showToast('Cart cleared.');
+    renderCart();
+  }
+
+  function confirmBorrow() {
+    const cart = LMS.getCart();
+    if (cart.length === 0) {
+      showToast('Your cart is empty!', 'error'); return;
+    }
+    cart.forEach(id => LMS.addBorrowed(id));
+    LMS.setCart([]);
+    showToast('Books borrowed successfully! 🎉', 'success');
+    setTimeout(() => { window.location.href = 'dashboard.html'; }, 1500);
+  }
+
+  renderCart();
+</script>
+</body>
+</html>
